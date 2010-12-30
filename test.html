@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Monads in JavaScript</title>
+</head>
+<body>
+<div id="display" style="white-space:pre-wrap"></div>
+<script src="monads.js"></script>
+<script>
+    var equal = function(a, b) {
+        if (a.length !== b.length) {
+            return false;
+        }
+        for (var i = 0; i < a.length; a++) {
+            if (a[i] !== b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+        
+    var test = function(t, b) {
+        if (b) {
+            t += " test passed.\n";
+        } else {
+            t += " test failed.\n";
+        }
+
+        document.getElementById('display').textContent += t;
+    };
+
+    var test_laws = function(name, unit) {
+        var f = function(x) {return unit(2 * x);};
+        var g = function(x) {return unit(x + 3);};
+        var h = function(x) {return 2 * x.extract();};
+        var i = function(x) {return x.extract() + 3;};
+
+        // Monad Laws
+        //
+        //  (bind (unit a) f)  == (f a)
+        //  (bind m unit) == m
+        //  (bind (bind m f) g) == (bind m (\x -> bind (f x) g))
+
+        if (unit(1).bind !== undefined) {
+            unit(1).bind(f).bind(function (x) {
+                f(1).bind(function (y) {
+                    test(name + " Monad Left Identity ", x === y);
+                    return unit();
+                }).run();
+                return unit();
+            }).run();
+            unit(1).bind(unit).bind(function(x) {
+                test(name + " Monad Right Identity", x === 1);
+                return unit();
+            }).run();
+            unit(1).bind(f).bind(g).bind(function(x) {
+                unit(1).bind(function(x) {return f(x).bind(g);}).bind(function(y) {
+                    test(name + " Monad Associativity", x === y);
+                    return unit();
+                }).run();
+                return unit();
+            }).run();
+        } 
+
+        // Comonad Laws
+        //
+        // (extend (extract)) == id
+        // (extract (extend f) == f
+        // (extend g (extend f)) == extend(f(extend g))
+
+        if ((unit(1).extract !== undefined) && (unit(1).extend !== undefined)) {
+            test(name + " Comonad Left Identity", unit(1).extend(comonad.extract).extract() === 1);
+            test(name + " Comonad Right Identity", unit(1).extend(h).extract() ===  h(unit(1)));
+            test(name + " Comonad Associativity", unit(1).extend(i).extend(h).extract() === unit(1).extend(function(a) {return h(a.extend(i));}).extract());
+            var n = unit(1);
+            var m = unit(2);
+            test(name + " Comonad Scope", n.extract(), 1);
+        }
+
+        // MonadPlus Laws
+        //
+        // (plus zero m) == m
+        // (plus m zero) == m
+        // (plus m (plus n o)) == (plus (plus m n) o)
+
+        if ((unit(1).zero !== undefined) && (unit(1).plus !== undefined)) {
+            unit().plus(unit(1)).bind(function(x) {
+                test(name + " MonadPlus Left Identity", x === 1);
+                return unit();
+            }).run();
+            unit(1).plus(unit()).bind(function(x) {
+                test(name + " MonadPlus Right Identity", x === 1);
+                return unit();
+            }).run();
+            var a1 = [];
+            var a2 = [];
+            unit().plus(unit(1).plus(unit(2))).bind(function(x) {
+                a1 += x;
+                return unit();
+            }).run();
+            unit().plus(unit(1)).plus(unit(2)).bind(function(y) {
+                a2 += y;
+                return unit();
+            }).run();
+            test(name + " MonadPlus Associativity", equal(a1, a2));
+        }
+    };
+
+    // test monad laws
+    test_laws("Identity", identity.unit);
+    test_laws("Maybe", maybe.unit);
+    test_laws("Either", either.unit);
+    test_laws("List", list.unit);
+    test_laws("Continuation", continuation.unit);
+
+    // test callcc 
+    var m = continuation.unit("1");
+    test("Continuation CallCC", m.bind(function(x) {
+        return m.callcc(function(k) {return m.unit("2");}).bind(function(y) {
+            return m.unit(x + "+" + y);
+        });
+    }).fmap(function(x) {return "A" + x;}).run(id) === "A1+2");
+
+
+    var m = continuation.unit("2");
+    m.bind(function(x) {
+        return m.callcc(function(k) {setTimeout(function() {k("4")}, 1000); return continuation.unit("3");}).bind(function(y) {
+            return m.unit(x + "+" + y);
+        });
+    }).fmap(function(x) {return "A" + x;}).bind(function(x) {
+        if (x === "A2+3") {
+            document.getElementById('display').textContent += "Continuation CallCC immediate test passed\n";
+        } else if (x === "A2+4") {
+            document.getElementById('display').textContent += "Continuation CallCC callback test passed\n";
+        } else {
+            document.getElementById('display').textContent += "Continuation CallCC imediate/callback failed\n";
+        }
+        return m.unit();
+    }).run(id);
+
+    var m = continuation().unit("3");
+    m.bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("5" + x)}, 500); return m.unit("7" + x);});});
+    m.bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("6" + x)}, 1000); return m.unit("8" + x);});});
+    m.fmap(function(x) {return "A" + x;});
+    m.bind(function(x) {
+        if (x === "A873") {
+            document.getElementById('display').textContent += "Continuation CallCC imm, imm test passed\n";
+        } else if (x === "A853") {
+            document.getElementById('display').textContent += "Continuation CallCC cb, imm test passed\n";
+        } else if (x === "A673") {
+            document.getElementById('display').textContent += "Continuation CallCC imm, cb test passed\n";
+        } else if (x === "A653") {
+            document.getElementById('display').textContent += "Continuation CallCC cb, cb test passed\n";
+        } else {
+            document.getElementById('display').textContent += "Continuation CallCC imm/cb, imm/cb test failed\n";
+        }
+        return m.unit();
+    });
+    m.run(id);
+
+</script>
+</body>
+</html>
