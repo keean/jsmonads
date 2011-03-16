@@ -183,13 +183,7 @@ Maybe.prototype.extract = function() {
 
 // Pointed => Applicative
 Maybe.prototype.product = function(a) {
-    var x = this.exec();
-    if (x === undefined) {
-        return this;
-    } else {
-        var y = a.exec();
-        return (y === undefined) ? a : new Maybe(x(y));
-    }
+    return (this.exec() === undefined) ? this : ((a.exec() === undefined) ? a : new Maybe(this.exec()(a.exec())))
 };
 
 // Applicative => Monad
@@ -212,17 +206,17 @@ Maybe.prototype.plus = function(a) {
 // Either Monad
 
 var Either = function(left, x) {
-    this.left = left; 
-    this.x = x;
+    this.left = function() {return left}; 
+    this.exec = function() {return x};
 };
 
 Either.prototype.exec = function() {
-    return this.x;
+    return this.exec();
 };
 
 // Functor
 Either.prototype.fmap = function(a) {
-    return this.left ? this : new Either(false, a(this.x));
+    return this.left() ? this : new Either(false, a(this.exec()));
 };
 
 // Functor => Pointed
@@ -232,17 +226,17 @@ Either.unit = function(a) {
 
 // Functor => Copointed
 Either.prototype.extract = function() {
-    return this.x;
+    return this.exec();
 };
 
 // Pointed => Applicative
 Either.prototype.product = function(a) {
-    return this.left ? this : (a.left ? a : new Either(false, this.x(a.x)));
+    return this.left() ? this : (a.left() ? a : new Either(false, this.exec()(a.exec())));
 };
 
 // Applicative => Monad
 Either.prototype.bind = function(a) {
-    return this.left ? this : a(this.x);
+    return this.left() ? this : a(this.exec());
 };
 
 // Monoid, Applicative => Alternative, Monad => MonadZero
@@ -252,7 +246,7 @@ Either.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 Either.prototype.plus = function(a) {
-    return this.left ? a : this;
+    return this.left() ? a : this;
 };
 
 // Monad => MonadError
@@ -262,25 +256,26 @@ Either.prototype.fail = function(a) {
 
 // Monad => MonadError
 Either.prototype.trap = function(a) {
-    return this.left ? a(this.x) : this;
+    return this.left() ? a(this.exec()) : this;
 };
 
 //------------------------------------------------------------------------
 // List Monad
 
 var List = function(x) {
-    this.x = x;
+    this.unbox = function() {return x};
 }
 
 List.prototype.exec = function() {
-    return this.x;
+    return this.unbox();
 };
 
 // Functor
 List.prototype.fmap = function(a) {
+    var x = this.unbox();
     var y = [];
-    for (var i = 0; i < this.x.length; i++) {
-        y.push(a(this.x[i]));
+    for (var i = 0; i < x.length; i++) {
+        y.push(a(x[i]));
     }
     return new List(y);
 };
@@ -292,24 +287,27 @@ List.unit = function(a) {
 
 // Functor => Copointed
 List.prototype.extract = function() {
-    return this.x[0];
+    return this.unbox()[0];
 };
 
 // Pointed => Applicative
 List.prototype.product = function(a) {
-    var y = [];
-    for (var j = 0; j < this.x.length; j++) {
-        for (var i = 0; i < a.x.length; i++) {
-            y.push(this.x[j](a.x[i]));
+    var x = this.unbox();
+    var y = a.unbox();
+    var z = [];
+    for (var j = 0; j < x.length; j++) {
+        for (var i = 0; i < y.length; i++) {
+            z.push(x[j](y[i]));
         }
     }
-    return new List(y);
+    return new List(z);
 };
 
 List.prototype.join = function() {
+    var x = this.unbox();
     var y = [];
-    for (var i = 0; i < this.x.length; i++) {
-        var xi = this.x[i];
+    for (var i = 0; i < x.length; i++) {
+        var xi = x[i];
         if (xi.length !== undefined) {
             y.concat(xi);
         } else {
@@ -331,14 +329,15 @@ List.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 List.prototype.plus = function(a) {
-    return new List(this.x.concat(a.x));
+    return new List(this.unbox().concat(a.unbox()));
 };
     
 // Copointed => Comonad
 List.prototype.extend = function(a) {
+    var x = this.unbox();
     var y = [];
-    for(var i = 0; i < this.x.length; i++) {
-        y.push(a(new List(this.x.slice(i))));
+    for(var i = 0; i < x.length; i++) {
+        y.push(a(new List(x.slice(i))));
     }
     return new List(y);
 };
