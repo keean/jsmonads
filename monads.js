@@ -31,7 +31,7 @@ var functor = {
     fmap: function(a) {
         return function(f) {
             return f.fmap(a);
-        }
+        };
     }
 };
 
@@ -73,7 +73,7 @@ var monad = {
     bind: function(m) {
         return function(f) {
             return m.bind(f);
-        }
+        };
     },
 };
 
@@ -84,7 +84,7 @@ var comonad = {
     extend: function(m) {
         return function(f) {
             return m.extend(f);
-        }
+        };
     },
 };
 
@@ -111,7 +111,7 @@ var monad_cont = {
     callcc: function(m) {
         return function(f) {
             return m.callcc(f);
-        }
+        };
     }
 };
 
@@ -119,7 +119,7 @@ var monad_cont = {
 // Identity Monad
 
 var Identity = function(x) {
-    this.unbox = function() {return x};
+    this.unbox = function() {return x;};
 };
 
 // Functor
@@ -158,7 +158,7 @@ Identity.prototype.extend = function(a) {
 // Maybe Monad
 
 var Maybe = function(x) {
-    this.unbox = function() {return x};
+    this.unbox = function() {return x;};
 };
 
 // Functor
@@ -206,6 +206,10 @@ var Either = function(left, x) {
     this.is_left = function() {return left;}; 
 };
 
+Either.prototype.unbox = function() {
+    return {value: this.value(), is_left: this.is_left()};
+};
+
 // Functor
 Either.prototype.fmap = function(a) {
     return this.is_left() ? this : new Either(false, a(this.value()));
@@ -250,7 +254,7 @@ Either.prototype.trap = function(a) {
 // List Monad
 
 var List = function(x) {
-    this.unbox = function() {return x};
+    this.unbox = function() {return x;};
 }
 
 // Functor
