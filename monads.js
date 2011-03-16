@@ -172,7 +172,7 @@ Maybe.unit = function(a) {
     return new Maybe(a);
 };
 
-// Functor => Copointed
+// Functor => Copointed *REMOVE*
 Maybe.prototype.extract = function() {
     return this.unbox();
 };
@@ -272,11 +272,6 @@ List.unit = function(a) {
     return new List([a]);
 };
 
-// Functor => Copointed
-List.prototype.extract = function() {
-    return this.unbox()[0];
-};
-
 // Pointed => Applicative
 List.prototype.product = function(a) {
     var x = this.unbox();
@@ -319,14 +314,73 @@ List.prototype.plus = function(a) {
     return new List(this.unbox().concat(a.unbox()));
 };
     
+//------------------------------------------------------------------------
+// Stream Comonad 
+
+var Stream = function(x) {
+    this.unbox = function() {return x;};
+}
+
+// Functor
+Stream.prototype.fmap = function(a) {
+    var x = this.unbox();
+    var y = [];
+    for (var i = 0; i < x.length; i++) {
+        y.push(a(x[i]));
+    }
+    return new Stream(y);
+};
+
+// Functor => Pointed
+Stream.unit = function(a) {
+    return new Stream([a]);
+};
+
+// Functor => Copointed
+Stream.prototype.extract = function() {
+    return this.unbox()[0];
+};
+
+// Pointed => Applicative
+Stream.prototype.product = function(a) {
+    var x = this.unbox();
+    var y = a.unbox();
+    var z = [];
+    for (var j = 0; j < x.length; j++) {
+        for (var i = 0; i < y.length; i++) {
+            z.push(x[j](y[i]));
+        }
+    }
+    return new Stream(z);
+};
+
+Stream.prototype.join = function() {
+    var x = this.unbox();
+    var y = [];
+    for (var i = 0; i < x.length; i++) {
+        var xi = x[i];
+        if (xi.length !== undefined) {
+            y.concat(xi);
+        } else {
+            y.push(xi);
+        }
+    }
+    return new Stream(y);
+};
+
+// Applicative => Monad
+Stream.prototype.bind = function(a) {
+    return this.join(this.fmap(a));
+};
+
 // Copointed => Comonad
-List.prototype.extend = function(a) {
+Stream.prototype.extend = function(a) {
     var x = this.unbox();
     var y = [];
     for(var i = 0; i < x.length; i++) {
-        y.push(a(new List(x.slice(i))));
+        y.push(a(new Stream(x.slice(i))));
     }
-    return new List(y);
+    return new Stream(y);
 };
 
 //------------------------------------------------------------------------

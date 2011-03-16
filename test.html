@@ -101,6 +101,16 @@
             (dot (m.unit) (inc)) (1)
         );
 
+        // Copointed Functor Laws
+        //
+        // extract . fmap f = f . extract
+        if (m.unit(1).extract !== undefined) {
+            test(name + " Copointed",
+                m.unit(1).fmap(inc).extract(),
+                inc(m.unit(1).extract())
+            );
+        }
+
         // Applicative Functor Laws
         //
         // prod (unit id) v == v // prod (prod (prod (unit dot) u) v) w == prod u (prod v w)
@@ -203,6 +213,7 @@
     test_laws("Maybe", Maybe);
     test_laws("Either", Either);
     test_laws("List", List);
+    test_laws("Stream", Stream);
     test_laws("Continuation", continuation());
 
     // test callcc 
