@@ -14,8 +14,8 @@ var dot = function(a) {return function(b) {return function(c) {return a(b(c));}}
 //      plus :: a -> a -> a
 //
 var monoid = {
-    zero: function() {
-        return pointed.unit();
+    zero: function(m) {
+        return m.zero();
     },
     plus: function(m) {
         return function (n) {
