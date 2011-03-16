@@ -54,6 +54,16 @@
         document.getElementById('display').textContent += t;
     };
 
+    var testM = function(t, a, b) {
+        if (equal(a.unbox(), b.unbox())) {
+            t += " test passed.\n";
+        } else {
+            t += " test failed.\n";
+        }
+
+        document.getElementById('display').textContent += t;
+    };
+
     var test_laws = function(name, m) {
         var h = function(x) {return 2 * x.extract();};
         var i = function(x) {return x.extract() + 3;};
@@ -72,13 +82,13 @@
         // fmap (f . g) == fmap f . fmap g
 
         if (m.unit(1).fmap !== undefined) {
-            test(name + " Functor Identity",
-                m.unit(1).fmap(id).exec(),
-                m.unit(id(1)).exec()
+            testM(name + " Functor Identity",
+                m.unit(1).fmap(id),
+                m.unit(id(1))
             );
-            test(name + " Functor Composition",
-                m.unit(1).fmap(dot (dbl) (inc)).exec(),
-                ((dot (functor.fmap(dbl)) (functor.fmap(inc)))(m.unit(1))).exec()
+            testM(name + " Functor Composition",
+                m.unit(1).fmap(dot (dbl) (inc)),
+                ((dot (functor.fmap(dbl)) (functor.fmap(inc)))(m.unit(1)))
             );
         }
 
@@ -86,9 +96,9 @@
         //
         // unit . f == fmap f . unit
 
-        test(name + " Pointed",
-            (dot (functor.fmap(inc)) (m.unit)) (1).exec(),
-            (dot (m.unit) (inc))(1).exec()
+        testM(name + " Pointed",
+            (dot (functor.fmap(inc)) (m.unit)) (1),
+            (dot (m.unit) (inc)) (1)
         );
 
         // Applicative Functor Laws
@@ -99,25 +109,25 @@
         // fmap f x == prod (unit f) x
 
         if (m.unit(1).product !== undefined) {
-            test(name + " Applicative Identity",
+            testM(name + " Applicative Identity",
                 m.unit(id).product(m.unit(1)),
                 m.unit(1)
             );
-            test(name + " Applicative Composition",
-                m.unit(dot).product(m.unit(dbl)).product(m.unit(inc)).product(m.unit(1)).exec(),
-                m.unit(dbl).product(m.unit(inc).product(m.unit(1))).exec()
+            testM(name + " Applicative Composition",
+                m.unit(dot).product(m.unit(dbl)).product(m.unit(inc)).product(m.unit(1)),
+                m.unit(dbl).product(m.unit(inc).product(m.unit(1)))
             );
-            test(name + " Applicative Homomorphism",
-                m.unit(inc).product(m.unit(1)).exec(),
-                m.unit(2).exec()
+            testM(name + " Applicative Homomorphism",
+                m.unit(inc).product(m.unit(1)),
+                m.unit(2)
             );
-            test(name + " Applicative Interchange",
-                m.unit(inc).product(m.unit(1)).exec(),
-                m.unit(rev(1)).product(m.unit(inc)).exec()
+            testM(name + " Applicative Interchange",
+                m.unit(inc).product(m.unit(1)),
+                m.unit(rev(1)).product(m.unit(inc))
             );
-            test(name + " Applicative Fmap",
-                m.unit(1).fmap(inc).exec(),
-                m.unit(inc).product(m.unit(1)).exec()
+            testM(name + " Applicative Fmap",
+                m.unit(1).fmap(inc),
+                m.unit(inc).product(m.unit(1))
             );
         }
 
@@ -128,17 +138,17 @@
         // bind (bind m f) g == bind m (\x -> bind (f x) g)
 
         if (m.unit(1).bind !== undefined) {
-            test(name + " Monad Left Identity",
+            testM(name + " Monad Left Identity",
                 m.unit(1).bind(incM),
                 m.unit(inc(1))
             );
-            test(name + " Monad Right Identity",
+            testM(name + " Monad Right Identity",
                 m.unit(1).bind(m.unit),
                 m.unit(1)
             );
-            test(name + " Monad Associativity",
-                m.unit(1).bind(incM).bind(dblM).exec(),
-                m.unit(1).bind(function(x) {return incM(x).bind(dblM);}).exec()
+            testM(name + " Monad Associativity",
+                m.unit(1).bind(incM).bind(dblM),
+                m.unit(1).bind(function(x) {return incM(x).bind(dblM);})
             );
         } 
 
@@ -149,7 +159,7 @@
         // (extend g (extend f)) == extend(f(extend g))
 
         if (m.unit(1).extend !== undefined) {
-            test(name + " Comonad Left Identity",
+            testM(name + " Comonad Left Identity",
                 m.unit(1).extend(copointed.extract),
                 m.unit(1)
             );
@@ -157,9 +167,9 @@
                 m.unit(1).extend(h).extract(),
                 h(m.unit(1))
             );
-            test(name + " Comonad Associativity",
-                m.unit(1).extend(i).extend(h).exec(),
-                m.unit(1).extend(function(a) {return h(a.extend(i));}).exec()
+            testM(name + " Comonad Associativity",
+                m.unit(1).extend(i).extend(h),
+                m.unit(1).extend(function(a) {return h(a.extend(i));})
             );
             var n = m.unit(1);
             var u = m.unit(2);
@@ -173,15 +183,15 @@
         // (plus m (plus n o)) == (plus (plus m n) o)
 
         if ((m.zero !== undefined) && (m.unit(1).plus !== undefined)) {
-            test(name + " MonadPlus Left Identity",
+            testM(name + " MonadPlus Left Identity",
                 m.zero().plus(m.unit(1)),
                 m.unit(1)
             );
-            test(name + " MonadPlus Right Identity",
+            testM(name + " MonadPlus Right Identity",
                 m.unit(1).plus(m.zero()),
                 m.unit(1)
             );
-            test(name + " MonadPlus Associativity",
+            testM(name + " MonadPlus Associativity",
                 m.zero().plus(m.unit(1).plus(m.unit(2))),
                 m.zero().plus(m.unit(1)).plus(m.unit(2))
             );

@@ -119,12 +119,12 @@ var monad_cont = {
 // Identity Monad
 
 var Identity = function(x) {
-    this.exec = function() {return x};
+    this.unbox = function() {return x};
 };
 
 // Functor
 Identity.prototype.fmap = function(a) { 
-    return new Identity(a(this.exec()));
+    return new Identity(a(this.unbox()));
 };
 
 // Functor => Pointed
@@ -134,19 +134,19 @@ Identity.unit = function(a) {
 
 // Functor => Copointed
 Identity.prototype.extract = function() {
-    return this.exec();
+    return this.unbox();
 };
 
 // Pointed => Applicative
 
 Identity.prototype.product = function(a) {
-    return new Identity(this.exec()(a.exec()));
+    return new Identity(this.unbox()(a.unbox()));
 };
 
 // Applicative => Monad
 
 Identity.prototype.bind = function(a) {
-    return a(this.exec());
+    return a(this.unbox());
 };
 
 // Copointed => Comonad
@@ -158,16 +158,16 @@ Identity.prototype.extend = function(a) {
 // Maybe Monad
 
 var Maybe = function(x) {
-    this.exec = function() {return x};
+    this.unbox = function() {return x};
 };
 
 Maybe.prototype.exec = function() {
-    return this.exec();
+    return this.unbox();
 };
 
 // Functor
 Maybe.prototype.fmap = function(a) {
-    var x = this.exec();
+    var x = this.unbox();
     return (x === undefined) ? this : new Maybe(a(x));
 };
 
@@ -178,17 +178,17 @@ Maybe.unit = function(a) {
 
 // Functor => Copointed
 Maybe.prototype.extract = function() {
-    return this.exec();
+    return this.unbox();
 };
 
 // Pointed => Applicative
 Maybe.prototype.product = function(a) {
-    return (this.exec() === undefined) ? this : ((a.exec() === undefined) ? a : new Maybe(this.exec()(a.exec())))
+    return (this.unbox() === undefined) ? this : ((a.unbox() === undefined) ? a : new Maybe(this.unbox()(a.unbox())))
 };
 
 // Applicative => Monad
 Maybe.prototype.bind = function(a) {
-    var x = this.exec();
+    var x = this.unbox();
     return (x === undefined) ? this : a(x);
 };
 
@@ -199,24 +199,24 @@ Maybe.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 Maybe.prototype.plus = function(a) {
-    return (this.exec() === undefined) ? a : this;
+    return (this.unbox() === undefined) ? a : this;
 };
 
 //------------------------------------------------------------------------
 // Either Monad
 
 var Either = function(left, x) {
-    this.left = function() {return left}; 
-    this.exec = function() {return x};
+    this.value = function() {return x;};
+    this.is_left = function() {return left;}; 
 };
 
-Either.prototype.exec = function() {
-    return this.exec();
+Either.prototype.unbox = function() {
+    return {value: this.value(), is_left: this.is_left()};
 };
 
 // Functor
 Either.prototype.fmap = function(a) {
-    return this.left() ? this : new Either(false, a(this.exec()));
+    return this.is_left() ? this : new Either(false, a(this.value()));
 };
 
 // Functor => Pointed
@@ -224,19 +224,14 @@ Either.unit = function(a) {
     return new Either(false, a);
 };
 
-// Functor => Copointed
-Either.prototype.extract = function() {
-    return this.exec();
-};
-
 // Pointed => Applicative
 Either.prototype.product = function(a) {
-    return this.left() ? this : (a.left() ? a : new Either(false, this.exec()(a.exec())));
+    return this.is_left() ? this : (a.is_left() ? a : new Either(false, this.value()(a.value())));
 };
 
 // Applicative => Monad
 Either.prototype.bind = function(a) {
-    return this.left() ? this : a(this.exec());
+    return this.is_left() ? this : a(this.value());
 };
 
 // Monoid, Applicative => Alternative, Monad => MonadZero
@@ -246,7 +241,7 @@ Either.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 Either.prototype.plus = function(a) {
-    return this.left() ? a : this;
+    return this.is_left() ? a : this;
 };
 
 // Monad => MonadError
@@ -256,7 +251,7 @@ Either.prototype.fail = function(a) {
 
 // Monad => MonadError
 Either.prototype.trap = function(a) {
-    return this.left() ? a(this.exec()) : this;
+    return this.is_left() ? a(this.value()) : this;
 };
 
 //------------------------------------------------------------------------
