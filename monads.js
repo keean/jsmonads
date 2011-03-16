@@ -161,10 +161,6 @@ var Maybe = function(x) {
     this.unbox = function() {return x};
 };
 
-Maybe.prototype.exec = function() {
-    return this.unbox();
-};
-
 // Functor
 Maybe.prototype.fmap = function(a) {
     var x = this.unbox();
@@ -208,10 +204,6 @@ Maybe.prototype.plus = function(a) {
 var Either = function(left, x) {
     this.value = function() {return x;};
     this.is_left = function() {return left;}; 
-};
-
-Either.prototype.unbox = function() {
-    return {value: this.value(), is_left: this.is_left()};
 };
 
 // Functor
@@ -260,10 +252,6 @@ Either.prototype.trap = function(a) {
 var List = function(x) {
     this.unbox = function() {return x};
 }
-
-List.prototype.exec = function() {
-    return this.unbox();
-};
 
 // Functor
 List.prototype.fmap = function(a) {
