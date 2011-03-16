@@ -3,56 +3,19 @@
 
 var id = function(x) {return x};
 
-//  class Functor m where
-//      fmap :: (a -> b) -> f a -> f b
-//
-var functor = {
-    fmap: function(m) {
-        return function(f) {
-            return m.fmap(f);
-        }
-    }
-};
+var app = function(a) {return function(b) {return a(b);};};
 
-//  class Monad m where
-//      unit :: a -> m a
-//      bind :: m a -> (a -> m b) -> m b
-//
-var monad = {
-    bind: function(m) {
-        return function(f) {
-            return m.bind(f);
-        }
-    },
-    join: function(m) {
-        return function(n) {
-            return m.join(n);
-        }
-    }
-};
+var rev = function(a) {return function(b) {return b(a);};};
 
-//  class Comonad w where
-//      extract :: w a -> a
-//      extend :: w a -> (w a -> b) -> w b
-//
-var comonad = {
-    extend: function(m) {
-        return function(f) {
-            return m.extend(f);
-        }
-    },
-    extract: function(m) {
-        return m.extract();
-    }
-};
+var dot = function(a) {return function(b) {return function(c) {return a(b(c));}}};
 
-//  class MonadPlus m where
-//      zero :: m a
-//      plus :: m a -> m a -> m a
+//  class Monoid where
+//      zero :: a
+//      plus :: a -> a -> a
 //
-var monad_plus = {
+var monoid = {
     zero: function() {
-        return monad.unit();
+        return pointed.unit();
     },
     plus: function(m) {
         return function (n) {
@@ -61,12 +24,92 @@ var monad_plus = {
     }
 };
 
-//  class MonadCont where
+//  class Functor f where
+//      fmap :: (a -> b) -> f a -> f b
+//
+var functor = {
+    fmap: function(a) {
+        return function(f) {
+            return f.fmap(a);
+        }
+    }
+};
+
+// class Pointed f where
+//      unit :: a -> f a
+//
+var pointed = {
+    unit: function(f) {
+        return function(a) {
+            return f.unit(a);
+        };
+    }
+};
+
+// class Copointed f where
+//      extract :: f a -> a
+//
+var copointed = {
+    extract: function(m) {
+        return m.extract();
+    }
+};
+
+//  class Applicative f where
+//      product :: f (a -> b) -> f a -> f b
+//
+var applicative = {
+    product: function(f) {
+        return function(a) {
+            return f.product(a);
+        };
+    }
+};
+
+//  class Monad m where
+//      bind :: m a -> (a -> m b) -> m b
+//
+var monad = {
+    bind: function(m) {
+        return function(f) {
+            return m.bind(f);
+        }
+    },
+};
+
+//  class Comonad w where
+//      extend :: w a -> (w a -> b) -> w b
+//
+var comonad = {
+    extend: function(m) {
+        return function(f) {
+            return m.extend(f);
+        }
+    },
+};
+
+//  class MonadError m where
+//      fail :: e -> m a
+//      trap :: m a -> (e -> m a) -> m a
+var monad_error = {
+    fail: function(m) {
+        return function(e) {
+            return m.fail(e);
+        };
+    },
+    trap: function(m) {
+        return function(t) {
+            return m.trap(t);
+        };
+    }
+};
+
+//  class MonadCont m where
 //      callcc :: ((a -> (forall b. m b)) -> m a) -> m a
 //
 var monad_cont = {
     callcc: function(m) {
-        return function (f) {
+        return function(f) {
             return m.callcc(f);
         }
     }
@@ -74,186 +117,238 @@ var monad_cont = {
 
 //------------------------------------------------------------------------
 // Identity Monad
-//
-// implements: functor monad comonad
 
-var identity = function(value) {
-    return {
-        run: function() {
-            return value;
-        },
-
-        fmap: function(f) {
-            value = f(value);
-            return this;
-        },
-
-        unit: function(v) {
-            value = v;
-            return this;
-        },
-        bind: function(f) {
-            return f(value);
-        },
-
-        extract: function() {
-            return value;
-        },
-        extend: function(f) {
-            value = f(this);
-            return this;
-        }
-    };
+var Identity = function(x) {
+    this.exec = function() {return x};
 };
 
-identity.unit = identity;
+// Functor
+Identity.prototype.fmap = function(a) { 
+    return new Identity(a(this.exec()));
+};
+
+// Functor => Pointed
+Identity.unit = function(a) {
+    return new Identity(a);
+};
+
+// Functor => Copointed
+Identity.prototype.extract = function() {
+    return this.exec();
+};
+
+// Pointed => Applicative
+
+Identity.prototype.product = function(a) {
+    return new Identity(this.exec()(a.exec()));
+};
+
+// Applicative => Monad
+
+Identity.prototype.bind = function(a) {
+    return a(this.exec());
+};
+
+// Copointed => Comonad
+Identity.prototype.extend = function(a) {
+    return new Identity(a(this));
+};
 
 //------------------------------------------------------------------------
-// Maybe Monad: note unit() is used for zero.
-//
-// implements: functor monad monad_plus
+// Maybe Monad
 
-var maybe = function(value) {
-    return {
-        run: function() {
-            return value;
-        },
-
-        fmap: function(f) {
-            if (value !== undefined) {value = f(value);}
-            return this;
-        },
-
-        unit: function(v) {
-            value = v;
-            return this;
-        },
-        bind: function(f) {
-            if (value !== undefined) {return f(value);} 
-            return this;
-        },
-
-
-        zero: function() {
-            value = undefined;
-            return this;
-        },
-        plus: function(m) {
-            if (value !== undefined) {return this;}
-            return m;
-        }
-    };
+var Maybe = function(x) {
+    this.exec = function() {return x};
 };
 
-maybe.unit = maybe;
+Maybe.prototype.exec = function() {
+    return this.exec();
+};
+
+// Functor
+Maybe.prototype.fmap = function(a) {
+    var x = this.exec();
+    return (x === undefined) ? this : new Maybe(a(x));
+};
+
+// Functor => Pointed
+Maybe.unit = function(a) {
+    return new Maybe(a);
+};
+
+// Functor => Copointed
+Maybe.prototype.extract = function() {
+    return this.exec();
+};
+
+// Pointed => Applicative
+Maybe.prototype.product = function(a) {
+    var x = this.exec();
+    if (x === undefined) {
+        return this;
+    } else {
+        var y = a.exec();
+        return (y === undefined) ? a : new Maybe(x(y));
+    }
+};
+
+// Applicative => Monad
+Maybe.prototype.bind = function(a) {
+    var x = this.exec();
+    return (x === undefined) ? this : a(x);
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadZero
+Maybe.zero = function() {
+    return new Maybe(undefined);
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadPlus
+Maybe.prototype.plus = function(a) {
+    return (this.exec() === undefined) ? a : this;
+};
 
 //------------------------------------------------------------------------
 // Either Monad
-//
-// implements: functor monad monad_plus
 
-var either = function(is_right, value) {
-    return {
-        run: function() {
-            return {is_right:is_right, value:value};
-        },
-
-        fmap: function(f) {
-            if (is_right) {value = f(value);}
-            return this;
-        },
-
-        unit: function(v) {
-            is_right = (v !== undefined);
-            value = v;
-            return this;
-        },
-        bind: function(f) {
-            return is_right ? f(value) : this;
-        },
-
-        zero: function() {
-            is_right = false;
-            value = undefined;
-            return this;
-        },
-        plus: function(m) {
-            return is_right ? this : m;
-        }
-    };
+var Either = function(left, x) {
+    this.left = left; 
+    this.x = x;
 };
 
-either.unit = function(v) {return either(v !== undefined, v);};
+Either.prototype.exec = function() {
+    return this.x;
+};
+
+// Functor
+Either.prototype.fmap = function(a) {
+    return this.left ? this : new Either(false, a(this.x));
+};
+
+// Functor => Pointed
+Either.unit = function(a) {
+    return new Either(false, a);
+};
+
+// Functor => Copointed
+Either.prototype.extract = function() {
+    return this.x;
+};
+
+// Pointed => Applicative
+Either.prototype.product = function(a) {
+    return this.left ? this : (a.left ? a : new Either(false, this.x(a.x)));
+};
+
+// Applicative => Monad
+Either.prototype.bind = function(a) {
+    return this.left ? this : a(this.x);
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadZero
+Either.zero = function() {
+    return new Either(true, undefined);
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadPlus
+Either.prototype.plus = function(a) {
+    return this.left ? a : this;
+};
+
+// Monad => MonadError
+Either.prototype.fail = function(a) {
+    return new Either(true, a);
+};
+
+// Monad => MonadError
+Either.prototype.trap = function(a) {
+    return this.left ? a(this.x) : this;
+};
 
 //------------------------------------------------------------------------
 // List Monad
-//
-// implements: functor monad comonad monad_plus
 
-var list = function(value) {
-    return {
-        run: function() {
-            return value;
-        },
+var List = function(x) {
+    this.x = x;
+}
 
-        fmap: function(f) {
-            for (var i = 0; i < value.length; i++) {
-                value[i] = f(value[i]);
-            }
-            return this;
-        },
-
-        unit: function(u) {
-            value = (u === undefined) ? [] : [u];
-            return this;
-        },
-        bind: function(f) {
-            var new_value = [];
-            for (var i = 0; i < value.length; i++) {
-                f(value[i]).bind(function(x) {
-                    new_value = new_value.concat(x);
-                    return list([]);
-                });
-            }
-            value = new_value;
-            return this;
-        },
-
-        extract: function() {
-            return value[0];
-        },
-        extend: function(f) {
-            var new_value = [];
-            var l = value.length;
-            for(var i = 0; i < l; i++) {
-                new_value.push(f(this));
-                value.pop();
-            }
-            value = new_value;
-            return this;
-        },
-
-        zero: function() {
-            value = [];
-            return this;
-        },
-        plus: function(m) {
-            m.bind(function(x) {
-                value = value.concat(x);
-                return list([]);
-            });
-            return this;
-        }
-    };
+List.prototype.exec = function() {
+    return this.x;
 };
 
-list.unit = function(v) {return list((v === undefined) ? [] : [v]);};
+// Functor
+List.prototype.fmap = function(a) {
+    var y = [];
+    for (var i = 0; i < this.x.length; i++) {
+        y.push(a(this.x[i]));
+    }
+    return new List(y);
+};
+
+// Functor => Pointed
+List.unit = function(a) {
+    return new List([a]);
+};
+
+// Functor => Copointed
+List.prototype.extract = function() {
+    return this.x[0];
+};
+
+// Pointed => Applicative
+List.prototype.product = function(a) {
+    var y = [];
+    for (var j = 0; j < this.x.length; j++) {
+        for (var i = 0; i < a.x.length; i++) {
+            y.push(this.x[j](a.x[i]));
+        }
+    }
+    return new List(y);
+};
+
+List.prototype.join = function() {
+    var y = [];
+    for (var i = 0; i < this.x.length; i++) {
+        var xi = this.x[i];
+        if (xi.length !== undefined) {
+            y.concat(xi);
+        } else {
+            y.push(xi);
+        }
+    }
+    return new List(y);
+};
+
+// Applicative => Monad
+List.prototype.bind = function(a) {
+    return this.join(this.fmap(a));
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadZero
+List.zero = function() {
+    return new List([]);
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadPlus
+List.prototype.plus = function(a) {
+    return new List(this.x.concat(a.x));
+};
+    
+// Copointed => Comonad
+List.prototype.extend = function(a) {
+    var y = [];
+    for(var i = 0; i < this.x.length; i++) {
+        y.push(a(new List(this.x.slice(i))));
+    }
+    return new List(y);
+};
 
 //------------------------------------------------------------------------
 // Continuation Monad
 //
 // implements: functor monad monad_cont 
 
+/*
 var continuation = function(value) {
     return {
         run: function(k) {
@@ -304,6 +399,5 @@ var continuation = function(value) {
         }
     };
 };
-
-continuation.unit = function(u) {return continuation(function(k) {return k(u);});};
+*/
 
