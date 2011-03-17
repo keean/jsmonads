@@ -95,7 +95,6 @@
         // Pointed Functor Laws
         //
         // unit . f == fmap f . unit
-
         testM(name + " Pointed",
             (dot (functor.fmap(inc)) (m.unit)) (1),
             (dot (m.unit) (inc)) (1)
@@ -214,7 +213,7 @@
     test_laws("Either", Either);
     test_laws("List", List);
     test_laws("Stream", Stream);
-    test_laws("Continuation", continuation());
+    test_laws("Continuation", Cont);
 
     // test callcc 
     var m = continuation();

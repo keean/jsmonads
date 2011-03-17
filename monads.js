@@ -385,8 +385,53 @@ Stream.prototype.extend = function(a) {
 
 //------------------------------------------------------------------------
 // Continuation Monad
-//
-// implements: functor monad monad_cont 
+
+var Cont = function(x) {
+    this.run = function() {return x;};
+}
+
+Cont.prototype.unbox = function() {
+    return this.run()(id);   
+}
+
+// Functor
+Cont.prototype.fmap = function(f) {
+    var that = this;
+    return new Cont(function(c) {
+        return that.run()(function(a) {
+            return c(f(a));
+        });
+    });
+};
+
+// Functor => Pointed
+Cont.unit = function(a) {
+    return new Cont(function(c) {
+        return c(a);
+    });
+};
+
+// Pointed => Applicative
+Cont.prototype.product = function(k) {
+    var that = this;
+    return new Cont(function(c) {
+        return that.run()(function(a) {
+            return k.run()(function(b) {
+                return c(a(b));
+            });
+        });
+    });
+};
+
+// Applicative => Monad
+Cont.prototype.bind = function(k) {
+    var that = this;
+    return new Cont(function(c) {
+        return that.run()(function(a) {
+            return k(a).run()(c);
+        });
+    });
+};
 
 /*
 var continuation = function(value) {
