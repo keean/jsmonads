@@ -387,48 +387,106 @@ Stream.prototype.extend = function(a) {
 // Continuation Monad
 
 var Cont = function(x) {
-    this.run = function() {return x;};
+    this.run = function(a) {return x(a);};
 }
 
 Cont.prototype.unbox = function() {
-    return this.run()(id);   
+    return this.run(id);   
 }
 
 // Functor
 Cont.prototype.fmap = function(f) {
     var that = this;
-    return new Cont(function(c) {
-        return that.run()(function(a) {
-            return c(f(a));
+    return new Cont(function(k) {
+        return that.run(function(a) {
+            return k(f(a));
         });
     });
 };
 
 // Functor => Pointed
 Cont.unit = function(a) {
-    return new Cont(function(c) {
-        return c(a);
+    return new Cont(function(k) {
+        return k(a);
     });
 };
 
 // Pointed => Applicative
-Cont.prototype.product = function(k) {
+Cont.prototype.product = function(f) {
     var that = this;
-    return new Cont(function(c) {
-        return that.run()(function(a) {
-            return k.run()(function(b) {
-                return c(a(b));
+    return new Cont(function(k) {
+        return that.run(function(a) {
+            return f.run(function(b) {
+                return k(a(b));
             });
-        });
+    var that = this;    });
     });
 };
 
 // Applicative => Monad
-Cont.prototype.bind = function(k) {
+Cont.prototype.bind = function(f) {
     var that = this;
-    return new Cont(function(c) {
-        return that.run()(function(a) {
-            return k(a).run()(c);
+    return new Cont(function(k) {
+        return that.run(function(a) {
+            return f(a).run(k);
+        });
+    });
+};
+
+Cont.callcc = function(f) {
+    return new Cont(function(k) {
+        // return f(k).run(k);
+        return f(function(a) {
+            return new Cont(function(z) {
+                return k(a);
+            });
+        }).run(k);
+    });
+};
+
+Cont.prototype.reset = function(e) {
+    return this.unit(e.run(id));
+};
+
+Cont.prototype.shift = function(e) {
+    var that = this;
+    return new Cont(function(k) {
+        e(function(a) {
+            return that.unit(k(a));
+        }).run(id);
+    });
+};
+
+//----------------------------------------------------------------------------
+// Tail call continuation monad
+
+var Tail = function(x) {
+    this.run = function(a) {x(a);};
+}
+
+// Functor
+Tail.prototype.fmap = function(f) {
+    var that = this;
+    return new Tail(function(k) {
+        return that.run(function(a) {
+            return k(f(a));
+        });
+    });
+};
+
+// Functor => Pointed
+Tail.prototype.unit = function(a) {
+    return new Cont(function(k) {
+        return k(a);
+    });
+};
+
+// Applicative => Monad
+Tail.prototype.bind = function(f) {
+    var that = this;
+    return new Cont(function(k) {
+        return that.run(function(a) {
+            return f(a).run(k);
         });
     });
 };

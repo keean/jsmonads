@@ -205,6 +205,62 @@
                 m.zero().plus(m.unit(1)).plus(m.unit(2))
             );
         }
+
+        if (m.callcc != undefined) {
+            test(name + "CallCC test1",
+                m.unit("1").bind(function(x) {
+                    return m.callcc(function(k) {return m.unit("2");}).bind(function(y) {
+                        return m.unit(x + "+" + y);
+                    });
+                }).fmap(function(x) {return "A" + x;}).run(id),
+                "A1+2"
+            );
+
+            document.getElementById('display').textContent += m.unit("1").bind(function(x) {
+                    return new m(function(k) {
+                        setTimeout(function() {k("4")}, 1000);
+                        return k("2");
+                    });
+                }).bind(function(x) {
+                    return m.unit(x + "\n");
+                }).run(id);
+
+            /*
+            m.unit("2").bind(function(x) {
+                return m.callcc(function(k) {setTimeout(function() {k("4")}, 1000); return m.unit("3");}).bind(function(y) {
+                    return m.unit(x + "+" + y);
+                });
+            }).fmap(function(x) {return "A" + x;}).bind(function(x) {
+                if (x === "A2+3") {
+                    document.getElementById('display').textContent += "Continuation CallCC immediate test passed\n";
+                } else if (x === "A2+4") {
+                    document.getElementById('display').textContent += "Continuation CallCC callback test passed\n";
+                } else {
+                    document.getElementById('display').textContent += "Continuation CallCC imediate/callback failed\n";
+                }
+                return m.unit();
+            }).run(id);
+
+            m.unit("3").bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("5" + x)}, 500); return m.unit("7" + x);});})
+            .bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("6" + x)}, 1000); return m.unit("8" + x);});})
+            .fmap(function(x) {return "A" + x;})
+            .bind(function(x) {
+                if (x === "A873") {
+                    document.getElementById('display').textContent += "Continuation CallCC imm, imm test passed\n";
+                } else if (x === "A853") {
+                    document.getElementById('display').textContent += "Continuation CallCC cb, imm test passed\n";
+                } else if (x === "A673") {
+                    document.getElementById('display').textContent += "Continuation CallCC imm, cb test passed\n";
+                } else if (x === "A653") {
+                    document.getElementById('display').textContent += "Continuation CallCC cb, cb test passed\n";
+                } else {
+                    document.getElementById('display').textContent += "Continuation CallCC imm/cb, imm/cb test failed\n";
+                }
+                return m.unit();
+            }).run(id);
+            */
+        }
+
     };
 
     // test monad laws
@@ -215,95 +271,23 @@
     test_laws("Stream", Stream);
     test_laws("Continuation", Cont);
 
-    // test callcc 
-    var m = continuation();
-    test("Continuation CallCC",
-        m.unit("1").bind(function(x) {
-            return m.callcc(function(k) {return m.unit("2");}).bind(function(y) {
-                return m.unit(x + "+" + y);
-            });
-        }).fmap(function(x) {return "A" + x;}).run(id),
-        "A1+2"
-    );
+    var m = Cont;
+    var fun = function(n) {
+        m.callcc(function(exit1) {
+            if (n < 10) {
+                return exit1("<10");
+            }
+            return m.unit(">9");
+        }).bind(function(str) {
+            document.getElementById('display').textContent += "RESULT: " + str + "\n";
+            return m.unit();
+        }).run(id);
+    }
 
+    fun(5);
+    fun(15);
 
-    m.unit("2");
-    m.bind(function(x) {
-        return m.callcc(function(k) {setTimeout(function() {k("4")}, 1000); return m.unit("3");}).bind(function(y) {
-            return m.unit(x + "+" + y);
-        });
-    }).fmap(function(x) {return "A" + x;}).bind(function(x) {
-        if (x === "A2+3") {
-            document.getElementById('display').textContent += "Continuation CallCC immediate test passed\n";
-        } else if (x === "A2+4") {
-            document.getElementById('display').textContent += "Continuation CallCC callback test passed\n";
-        } else {
-            document.getElementById('display').textContent += "Continuation CallCC imediate/callback failed\n";
-        }
-        return m.unit();
-    }).run(id);
-
-    m.unit("3");
-    m.bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("5" + x)}, 500); return m.unit("7" + x);});});
-    m.bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("6" + x)}, 1000); return m.unit("8" + x);});});
-    m.fmap(function(x) {return "A" + x;});
-    m.bind(function(x) {
-        if (x === "A873") {
-            document.getElementById('display').textContent += "Continuation CallCC imm, imm test passed\n";
-        } else if (x === "A853") {
-            document.getElementById('display').textContent += "Continuation CallCC cb, imm test passed\n";
-        } else if (x === "A673") {
-            document.getElementById('display').textContent += "Continuation CallCC imm, cb test passed\n";
-        } else if (x === "A653") {
-            document.getElementById('display').textContent += "Continuation CallCC cb, cb test passed\n";
-        } else {
-            document.getElementById('display').textContent += "Continuation CallCC imm/cb, imm/cb test failed\n";
-        }
-        return m.unit();
-    });
-    m.run(id);
-
-var one = function() {document.getElementById('display').textContent += "ONE\n"; return 1;};
-var dbl = function(x) {document.getElementById('display').textContent += "DBL\n"; return x + x;};
-var inc = function(x) {document.getElementById('display').textContent += "INC\n"; return x + 1;};
-
-var prd = function(x, y) {return function(a) {return x(y(a));};};
-
-document.getElementById('display').textContent += typeof(prd(id,id)) + "\n";
-
-var ity = function(x) {return id(x + x)};
-document.getElementById('display').textContent += typeof(prd(ity, ity)) + "\n";
-
-var p1 = prd(inc, prd(dbl, one))();
-var p2 = prd(prd(dbl, id), id)();
-document.getElementById('display').textContent += "P1 " + p1 + "\n";
-document.getElementById('display').textContent += "P1 " + p2 + "\n";
-
-var i = Identity;
-
-var a = i.pure(inc).fmap(dbl);
-var b = i.pure(dbl);
-var c = i.pure(one);
-
-var a1 = a.product(b.product(c)).run();
-document.getElementById('display').textContent += "A1: " + a1 + "\n";
-var a2 = b.product(a.product(c)).run();
-document.getElementById('display').textContent += "A2: " + a2 + "\n";
-var a3 = a.product(b).run(1);
-document.getElementById('display').textContent += "A3: " + a3 + "\n";
-var a4 = b.product(a).run(1);
-document.getElementById('display').textContent += "A4: " + a4 + "\n";
-
-var m1 = a.bind(function(x) {return i.unit(function() {return x + 1;});}).run(1);
-document.getElementById('display').textContent += "M1: " + m1 + "\n";
-var m2 = a.bind(function(x) {return i.unit(x + 1);}).run(1);
-document.getElementById('display').textContent += "M2: " + m2 + "\n";
-var m3 = i.unit(1).bind(function(x) {document.getElementById('display').textContent += "M3: " + x + "\n"; return i.unit(2);}).run();
-document.getElementById('display').textContent += "M3: " + m3 + "\n";
-
-i.unit(id).bind(function(x) {i.unit(id);})
-document.getElementById('display').textContent += i.run() + "\n";
-
+</script>
 </script>
 </body>
 </html>
