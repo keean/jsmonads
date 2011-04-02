@@ -105,7 +105,7 @@ var monad_error = {
 };
 
 //  class MonadCont m where
-//      callcc :: ((a -> (forall b. m b)) -> m a) -> m a
+//      callcc :: ((a -> m b)) -> m a) -> m a
 //
 var monad_cont = {
     callcc: function(m) {
@@ -114,6 +114,10 @@ var monad_cont = {
         };
     }
 };
+
+//  class MonadDelimited m where
+//      reset :: m a -> m a
+//
 
 //------------------------------------------------------------------------
 // Identity Monad
@@ -443,8 +447,8 @@ Cont.callcc = function(f) {
     });
 };
 
-Cont.prototype.reset = function(e) {
-    return this.unit(e.run(id));
+Cont.reset = function(e) {
+    return Cont.unit(e.run(id));
 };
 
 Cont.shift = function(e) {

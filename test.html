@@ -216,17 +216,18 @@
                 "A1+2"
             );
 
-            m.shift(function(k) {
-                setTimeout(function() {k("1");}, 1);
-                k("2");
-            }).bind(function(x) {
-                return m.shift(function(k) {
-                    setTimeout(function() {k(x + "3");}, 1);
-                    k(x + "4");
-                });
-            }).run(function(x) {
-                document.getElementById('display').textContent += x + "\n";
-            });
+            document.getElementById('display').textContent += m.reset(
+                m.unit(m.shift(function(k) {
+                    setTimeout(function() {k("A");}, 1);
+                    setTimeout(function() {k("B");}, 2);
+                    return m.unit("Z\n");
+                }).bind(function(x) {
+                    return m.unit(x + "C");
+                }).run(function(x) {
+                    document.getElementById('display').textContent += x + "Q\n";
+                    return x + "P";
+                }))
+            ).run(id);
 
             /*
             m.unit("2").bind(function(x) {
