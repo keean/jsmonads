@@ -216,18 +216,44 @@
                 "A1+2"
             );
 
-            document.getElementById('display').textContent += m.reset(
-                m.unit(m.shift(function(k) {
-                    setTimeout(function() {k("A");}, 1);
-                    setTimeout(function() {k("B");}, 2);
-                    return m.unit("Z\n");
+            document.getElementById('display').textContent += "M" + m.reset(
+                m.unit("1").bind(function(y) {
+                    return m.shift(function(k) {
+                        setTimeout(function() {k(y + "A");}, 1);
+                        setTimeout(function() {k(y + "B");}, 2);
+                        return m.unit(y + "Y");
+                    }).bind(function(x) {
+                        return m.unit(x + "C");
+                    }).bind(function(x) {
+                        document.getElementById('display').textContent += x + "Q\n";
+                        return m.unit(x + "P");
+                    });
                 }).bind(function(x) {
-                    return m.unit(x + "C");
-                }).run(function(x) {
-                    document.getElementById('display').textContent += x + "Q\n";
-                    return x + "P";
-                }))
-            ).run(id);
+                    return m.unit(x + "3");
+                }).bind(function(x) {
+                    document.getElementById('display').textContent += x + "Z\n";
+                    return m.unit(x + "4");
+                })
+            ).run(id) + "\n";
+
+            m.unit("2").bind(function(y) {
+                return m.reset(
+                    m.shift(function(k) {
+                        setTimeout(function() {k(y + "A");}, 1);
+                        setTimeout(function() {k(y + "B");}, 2);
+                        return m.unit(y + "Y");
+                    }).bind(function(x) {
+                        return m.unit(x + "C");
+                    }).bind(function(x) {
+                        document.getElementById('display').textContent += x + "Q\n";
+                        return m.unit(x + "P");
+                    })
+                );
+            }).bind(function(x) {
+                return m.unit(x + "3");
+            }).run(function(x) {
+                document.getElementById('display').textContent += x + "Z\n";
+            });
 
             /*
             m.unit("2").bind(function(x) {
