@@ -116,8 +116,19 @@ var monad_cont = {
 };
 
 //  class MonadDelimited m where
-//      reset :: m a -> m a
 //
+var monad_delimited = {
+    reset: function(m) {
+        return function(e) {
+            return m.reset(e);
+        };
+    },
+    shift: function(m) {
+        return function(e) {
+            return m.shift(e);
+        };
+    }
+};
 
 //------------------------------------------------------------------------
 // Identity Monad
