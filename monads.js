@@ -437,10 +437,16 @@ Cont.callcc = function(f) {
     return new Cont(function(k) {
         // return f(k).run(k);
         return f(function(a) {
-            return new Cont(function(z) {
+            return new Cont(function() {
                 return k(a);
             });
         }).run(k);
+    });
+};
+
+Cont.getcc = function(f) {
+    return new Cont(function(k) {
+        return f(k);
     });
 };
 
@@ -449,98 +455,10 @@ Cont.prototype.reset = function(e) {
 };
 
 Cont.prototype.shift = function(e) {
-    var that = this;
     return new Cont(function(k) {
         e(function(a) {
-            return that.unit(k(a));
+            return Cont.unit(k(a));
         }).run(id);
     });
 };
-
-//----------------------------------------------------------------------------
-// Tail call continuation monad
-
-var Tail = function(x) {
-    this.run = function(a) {x(a);};
-}
-
-// Functor
-Tail.prototype.fmap = function(f) {
-    var that = this;
-    return new Tail(function(k) {
-        return that.run(function(a) {
-            return k(f(a));
-        });
-    });
-};
-
-// Functor => Pointed
-Tail.prototype.unit = function(a) {
-    return new Cont(function(k) {
-        return k(a);
-    });
-};
-
-// Applicative => Monad
-Tail.prototype.bind = function(f) {
-    var that = this;
-    return new Cont(function(k) {
-        return that.run(function(a) {
-            return f(a).run(k);
-        });
-    });
-};
-
-/*
-var continuation = function(value) {
-    return {
-        run: function(k) {
-            return value(k || id);
-        },
-
-        fmap: function(f) {
-            value = (function(v) {
-                return function(k) {
-                    return v(function(a) {
-                        return k(f(a));
-                    });
-                };
-            })(value);
-            return this;
-        },
-
-        unit: function(u) {
-            value = function(k) {return k(u);};
-            return this;
-        },
-        bind: function(f) { 
-            value = (function(v) {
-                return function(k) {
-                    return v(function(a) {
-                        return f(a).run(k);
-                    });
-                };
-            })(value);
-            return this;
-        },
-
-        callcc: function(f) {
-            value = function(k) {
-                return f(k).run(k);
-            };
-            return this;
-        },
-        shift: function(e) {
-            value = function(k) {
-                return e(function(a) {
-                    return this.unit(k(a));
-                }).run(id);
-            };
-        },
-        reset: function(e) {
-            return e.run(id);
-        }
-    };
-};
-*/
 

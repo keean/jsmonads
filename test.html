@@ -207,7 +207,7 @@
         }
 
         if (m.callcc != undefined) {
-            test(name + "CallCC test1",
+            test(name + " CallCC test1",
                 m.unit("1").bind(function(x) {
                     return m.callcc(function(k) {return m.unit("2");}).bind(function(y) {
                         return m.unit(x + "+" + y);
@@ -215,16 +215,22 @@
                 }).fmap(function(x) {return "A" + x;}).run(id),
                 "A1+2"
             );
+        }
 
-            document.getElementById('display').textContent += m.unit("1").bind(function(x) {
-                    return new m(function(k) {
-                        setTimeout(function() {k("4")}, 1000);
-                        return k("2");
-                    });
-                }).bind(function(x) {
-                    return m.unit(x + "\n");
-                }).run(id);
+        if (m.getcc != undefined) {
+            m.unit("1").bind(function(x) {
+                return m.getcc(function(k) {
+                    setTimeout(function() {k(x + "4");}, 1);
+                    k(x + "2");
+                });
+            }).bind(function(x) {
+                return m.unit(x + "\n");
+            }).run(function(x) {
+                document.getElementById('display').textContent += x;
+            });
+        }
 
+        if (m.callcc != undefined) {
             /*
             m.unit("2").bind(function(x) {
                 return m.callcc(function(k) {setTimeout(function() {k("4")}, 1000); return m.unit("3");}).bind(function(y) {
@@ -269,7 +275,8 @@
     test_laws("Either", Either);
     test_laws("List", List);
     test_laws("Stream", Stream);
-    test_laws("Continuation", Cont);
+    test_laws("Cont", Cont);
+    test_laws("Tail", Tail);
 
     var m = Cont;
     var fun = function(n) {
