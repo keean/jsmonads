@@ -215,22 +215,19 @@
                 }).fmap(function(x) {return "A" + x;}).run(id),
                 "A1+2"
             );
-        }
 
-        if (m.getcc != undefined) {
-            m.unit("1").bind(function(x) {
-                return m.getcc(function(k) {
-                    setTimeout(function() {k(x + "4");}, 1);
-                    k(x + "2");
-                });
+            m.shift(function(k) {
+                setTimeout(function() {k("1");}, 1);
+                k("2");
             }).bind(function(x) {
-                return m.unit(x + "\n");
+                return m.shift(function(k) {
+                    setTimeout(function() {k(x + "3");}, 1);
+                    k(x + "4");
+                });
             }).run(function(x) {
-                document.getElementById('display').textContent += x;
+                document.getElementById('display').textContent += x + "\n";
             });
-        }
 
-        if (m.callcc != undefined) {
             /*
             m.unit("2").bind(function(x) {
                 return m.callcc(function(k) {setTimeout(function() {k("4")}, 1000); return m.unit("3");}).bind(function(y) {
@@ -276,7 +273,6 @@
     test_laws("List", List);
     test_laws("Stream", Stream);
     test_laws("Cont", Cont);
-    test_laws("Tail", Tail);
 
     var m = Cont;
     var fun = function(n) {

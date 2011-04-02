@@ -419,7 +419,7 @@ Cont.prototype.product = function(f) {
             return f.run(function(b) {
                 return k(a(b));
             });
-    var that = this;    });
+        });
     });
 };
 
@@ -435,7 +435,6 @@ Cont.prototype.bind = function(f) {
 
 Cont.callcc = function(f) {
     return new Cont(function(k) {
-        // return f(k).run(k);
         return f(function(a) {
             return new Cont(function() {
                 return k(a);
@@ -444,19 +443,13 @@ Cont.callcc = function(f) {
     });
 };
 
-Cont.getcc = function(f) {
-    return new Cont(function(k) {
-        return f(k);
-    });
-};
-
 Cont.prototype.reset = function(e) {
     return this.unit(e.run(id));
 };
 
-Cont.prototype.shift = function(e) {
+Cont.shift = function(e) {
     return new Cont(function(k) {
-        e(function(a) {
+        return e(function(a) {
             return Cont.unit(k(a));
         }).run(id);
     });
