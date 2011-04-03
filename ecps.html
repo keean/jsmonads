@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Monads in JavaScript</title>
+</head>
+<body>
+<div id="display" style="white-space:pre-wrap"></div>
+<script src="monads.js"></script>
+<script>
+
+    var fun = function(a) {
+        return new Ecps(function(succ, fail) {
+            document.getElementById('display').textContent += "DONE " + a + "\n";
+            if (a < 10) {
+                setTimeout(function() {succ(a + 1);}, 0);
+            } else {
+                setTimeout(function() {fail(a);}, 0);
+            }
+        });
+    };
+
+    fun(5)
+    .bind(fun)
+    .bind(fun)
+    .bind(fun)
+    .bind(fun)
+    .bind(fun)
+    .bind(fun)
+    .run(function(a) {
+        document.getElementById('display').textContent += "SUCC " + a + "\n";
+    }, function(e) {
+        document.getElementById('display').textContent += "FAIL " + e + "\n";
+    });
+
+</script>
+</script>
+</body>
+</html>
