@@ -8,6 +8,14 @@
 <script src="monads.js"></script>
 <script>
 
+    var succ = function(a) {
+        document.getElementById('display').textContent += "SUCC " + a + "\n";
+    };
+
+    var fail = function(e) {
+        document.getElementById('display').textContent += "FAIL " + e + "\n";
+    };
+
     var fun = function(a) {
         return new Ecps(function(succ, fail) {
             document.getElementById('display').textContent += "DONE " + a + "\n";
@@ -27,11 +35,17 @@
         .bind(fun)
         .bind(fun);
 
-    prog.run(function(a) {
-        document.getElementById('display').textContent += "SUCC " + a + "\n";
-    }, function(e) {
-        document.getElementById('display').textContent += "FAIL " + e + "\n";
+    prog.run(succ, fail);
+
+    var prog2 = fun(1).bind(function(x) {
+        return fun(x).bind(function(y) {
+            return fun(x + y).bind(function(z) {
+                return fun(x + y + z);
+            })
+        })
     });
+
+    prog2.run(succ, fail);
 
 </script>
 </script>
