@@ -31,19 +31,6 @@
         return false;
     };
 
-    /*
-        if (a.length !== b.length) {
-            return false;
-        }
-        for (var i = 0; i < a.length; a++) {
-            if (a[i] !== b[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-    */
-        
     var test = function(t, a, b) {
         if (equal(a, b)) {
             t += " test passed.\n";
@@ -321,17 +308,17 @@
     test_laws("Ecps", Ecps);
 
     var fun = function(a) {
-        return new Ecps(function(sk, ek) {
+        return new Ecps(function(succ, fail) {
             document.getElementById('display').textContent += "DONE " + a + "\n";
             if (a < 10) {
-                setTimeout(function() {sk(a);}, 0);
+                setTimeout(function() {succ(a + 10);}, 0);
             } else {
-                setTimeout(function() {ek(a);}, 0);
+                setTimeout(function() {fail(a);}, 0);
             }
         });
     };
 
-    fun(5).bind(function() {return fun(15);}).run(function(a) {
+    fun(5).bind(fun).run(function(a) {
         document.getElementById('display').textContent += "SUCC " + a + "\n";
     }, function(e) {
         document.getElementById('display').textContent += "FAIL " + e + "\n";

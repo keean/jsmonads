@@ -558,7 +558,3 @@ Ecps.prototype.trap = function(f) {
     })
 };
 
-Ecps.lift = function(f) {
-    return new Ecps(f);
-};
-
