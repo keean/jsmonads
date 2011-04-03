@@ -239,8 +239,9 @@
             m.unit("2").bind(function(y) {
                 return m.reset(
                     m.shift(function(k) {
-                        setTimeout(function() {k(y + "A");}, 1);
-                        setTimeout(function() {k(y + "B");}, 2);
+                        //document.getElementById('display').textContent += "NNN " + k("X").unbox() + "\n";
+                        setTimeout(function() {k(y + "A").unbox();}, 2000);
+                        setTimeout(function() {k(y + "B").unbox();}, 4000);
                         return m.unit(y + "Y");
                     }).bind(function(x) {
                         return m.unit(x + "C");
@@ -254,6 +255,23 @@
             }).run(function(x) {
                 document.getElementById('display').textContent += x + "Z\n";
             });
+
+            document.getElementById('display').textContent += "K" + m.unit("3").bind(function(y) {
+                return m.callcc(function(ok) {
+                    return m.callcc(function(ex) {
+                        setTimeout(function() {ex(y + "FAIL").unbox();}, 5000);
+                        setTimeout(function() {ok(y + "SUCC").unbox();}, 10000);
+                        //return ex("ZZZ");
+                        return m.unit(y + "XXX");
+                    }).bind(function(ex) {
+                        document.getElementById('display').textContent += ex + " HANDLER\n";
+                        return m.unit(y + "YYY");
+                    })
+                })
+            }).bind(function(ok) {
+                document.getElementById('display').textContent += ok + " CONTINUE\n";
+                return m.unit("ZZZ");
+            }).run(id);
 
             /*
             m.unit("2").bind(function(x) {
@@ -300,6 +318,7 @@
     test_laws("List", List);
     test_laws("Stream", Stream);
     test_laws("Cont", Cont);
+    test_laws("Ecps", Ecps);
 
     var m = Cont;
     var fun = function(n) {

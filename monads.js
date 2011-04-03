@@ -153,13 +153,11 @@ Identity.prototype.extract = function() {
 };
 
 // Pointed => Applicative
-
 Identity.prototype.product = function(a) {
     return new Identity(this.unbox()(a.unbox()));
 };
 
 // Applicative => Monad
-
 Identity.prototype.bind = function(a) {
     return a(this.unbox());
 };
@@ -300,6 +298,7 @@ List.prototype.product = function(a) {
     return new List(z);
 };
 
+// Applicative => Monad
 List.prototype.join = function() {
     var x = this.unbox();
     var y = [];
@@ -369,6 +368,7 @@ Stream.prototype.product = function(a) {
     return new Stream(z);
 };
 
+// Applicative => Monad
 Stream.prototype.join = function() {
     var x = this.unbox();
     var y = [];
@@ -448,6 +448,7 @@ Cont.prototype.bind = function(f) {
     });
 };
 
+// Monad => Continuation 
 Cont.callcc = function(f) {
     return new Cont(function(k) {
         return f(function(a) {
@@ -458,15 +459,102 @@ Cont.callcc = function(f) {
     });
 };
 
+// Monad => Delimited
 Cont.reset = function(e) {
     return Cont.unit(e.run(id));
 };
 
+// Monad => Delimited
 Cont.shift = function(e) {
     return new Cont(function(k) {
         return e(function(a) {
             return Cont.unit(k(a));
         }).run(id);
     });
+};
+
+//------------------------------------------------------------------------
+// ErrorCPS Monad
+//
+
+var Ecps = function(x) {
+    this.run = function(sk ,ek) {return x(sk, ek);};
+}
+
+Ecps.prototype.unbox = function() {
+    return this.run(id, id);   
+}
+
+// Functor
+Ecps.prototype.fmap = function(f) {
+    var that = this;
+    return new Ecps(function(sk, ek) {
+        return that.run(function(a) {
+            return sk(f(a));
+        }, ek);
+    });
+};
+
+// Functor => Pointed
+Ecps.unit = function(a) {
+    return new Ecps(function(sk) {
+        return sk(a);
+    });
+};
+
+// Pointed => Applicative
+Ecps.prototype.product = function(f) {
+    var that = this;
+    return new Ecps(function(sk, ek) {
+        return that.run(function(a) {
+            return f.run(function(b) {
+                return sk(a(b));
+            }, ek);
+        }, ek);
+    });
+};
+
+// Applicative => Monad
+Ecps.prototype.bind = function(f) {
+    var that = this;
+    return new Ecps(function(sk, ek) {
+        return that.run(function(a) {
+            return f(a).run(sk, ek);
+        }, ek);
+    });
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadZero
+Ecps.zero = function() {
+    return new Ecps(function(sk, ek) {
+        return ek();
+    });
+};
+
+// Monoid, Applicative => Alternative, Monad => MonadPlus
+Ecps.prototype.plus = function(f) {
+    var that = this;
+    return new Ecps(function(sk, ek) {
+        return that.run(sk, function() {
+            return f.run(sk, ek);
+        });
+    });
+};
+
+// Monad => Error
+Ecps.fail = function(a) {
+    return new Ecps(function(sk, ek) {
+        return ek(a);
+    });
+};
+
+// Monad => Error
+Ecps.prototype.trap = function(f) {
+    var that = this;
+    return new Ecps(function(sk, ek) {
+        return that.run(sk, function(e) {
+            return f(e).run(sk, ek);
+        });
+    })
 };
 
