@@ -511,7 +511,7 @@ Ecps.prototype.fmap = function(f) {
     var m = this;
     return new Ecps(function(sk, ek) {
         return m.run(function() {
-            return sk(f.apply(m, arguments));
+            return sk.call(m, f.apply(m, arguments));
         }, ek);
     });
 };
@@ -530,7 +530,7 @@ Ecps.prototype.product = function(f) {
     return new Ecps(function(sk, ek) {
         return m.run(function(a) {
             return f.run(function() {
-                return sk(a.apply(m, arguments));
+                return sk.call(m, a.apply(m, arguments));
             }, ek);
         }, ek);
     });
@@ -548,8 +548,9 @@ Ecps.prototype.bind = function(f) {
 
 // Monoid, Applicative => Alternative, Monad => MonadZero
 Ecps.zero = function() {
+    var m = this;
     return new Ecps(function(sk, ek) {
-        return ek();
+        return ek.apply(m);
     });
 };
 
@@ -567,7 +568,7 @@ Ecps.prototype.plus = function(f) {
 Ecps.fail = function() {
     var m = this, a = arguments;
     return new Ecps(function(sk, ek) {
-        return ek(m, a);
+        return ek.apply(m, a);
     });
 };
 
