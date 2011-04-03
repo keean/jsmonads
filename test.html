@@ -324,15 +324,20 @@
         document.getElementById('display').textContent += "FAIL " + e + "\n";
     });
 
+    //var add = curry(function(a, b) {return a + b;});
     var add = function(a) {return function(b) {return a + b;};};
     var mul = function(a) {return function(b) {return a * b;};};
+    var bad = function(a, b) {return function(c, d) {return function(e, f) {return [a + c + e, b + d + f];};};};
 
     var L1 = new List([add, mul]);
     var L2 = new List([1, 2]);
     var L3 = new List([3, 4]);
     document.getElementById('display').textContent += "LIST: " + L1.product(L2).product(L3).unbox() + "\n"
-
     document.getElementById('display').textContent += "ECPS: " + Ecps.unit(1).fmap(add).product(Ecps.unit(2)).unbox() + "\n"
+    document.getElementById('display').textContent += "ECP2: " + Ecps.unit(1, 2).fmap(bad)
+        .product(Ecps.unit(2, 3))
+        .product(Ecps.unit(4, 5))
+        .unbox() + "\n"
 
 </script>
 </script>

@@ -1,4 +1,25 @@
 //------------------------------------------------------------------------
+// Currying and Partial Application
+
+Function.prototype.pap = function(that, args) {
+    var f = this;
+    return function() {
+        args = args.concat([].splice.call(arguments, 0));
+        return f.apply(that, args);
+    }
+};
+
+var curry = function(f) {
+    return function() {
+        if (arguments.length < f.length) {
+            return arguments.callee.pap(this, [].splice.call(arguments, 0));
+        } else {
+            return f.apply(this, arguments);
+        }
+    };
+};
+
+//------------------------------------------------------------------------
 // Polymorphic functions
 
 var id = function(x) {return x};
@@ -487,28 +508,29 @@ Ecps.prototype.unbox = function() {
 
 // Functor
 Ecps.prototype.fmap = function(f) {
-    var that = this;
+    var m = this;
     return new Ecps(function(sk, ek) {
-        return that.run(function(a) {
-            return sk(f(a));
+        return m.run(function() {
+            return sk(f.apply(m, arguments));
         }, ek);
     });
 };
 
 // Functor => Pointed
-Ecps.unit = function(a) {
-    return new Ecps(function(sk) {
-        return sk(a);
+Ecps.unit = function() {
+    var m = this, a = arguments;
+    return new Ecps(function(sk, ek) {
+        return sk.apply(m, a);
     });
 };
 
 // Pointed => Applicative
 Ecps.prototype.product = function(f) {
-    var that = this;
+    var m = this;
     return new Ecps(function(sk, ek) {
-        return that.run(function(a) {
-            return f.run(function(b) {
-                return sk(a(b));
+        return m.run(function(a) {
+            return f.run(function() {
+                return sk(a.apply(m, arguments));
             }, ek);
         }, ek);
     });
@@ -516,10 +538,10 @@ Ecps.prototype.product = function(f) {
 
 // Applicative => Monad
 Ecps.prototype.bind = function(f) {
-    var that = this;
+    var m = this;
     return new Ecps(function(sk, ek) {
-        return that.run(function() {
-            return f.apply(that, arguments).run(sk, ek);
+        return m.run(function() {
+            return f.apply(m, arguments).run(sk, ek);
         }, ek);
     });
 };
@@ -533,27 +555,28 @@ Ecps.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 Ecps.prototype.plus = function(f) {
-    var that = this;
+    var m = this;
     return new Ecps(function(sk, ek) {
-        return that.run(sk, function() {
+        return m.run(sk, function() {
             return f.run(sk, ek);
         });
     });
 };
 
 // Monad => Error
-Ecps.fail = function(a) {
+Ecps.fail = function() {
+    var m = this, a = arguments;
     return new Ecps(function(sk, ek) {
-        return ek(a);
+        return ek(m, a);
     });
 };
 
 // Monad => Error
 Ecps.prototype.trap = function(f) {
-    var that = this;
+    var m = this;
     return new Ecps(function(sk, ek) {
-        return that.run(sk, function() {
-            return f.apply(that, arguments).run(sk, ek);
+        return m.run(sk, function() {
+            return f.apply(m, arguments).run(sk, ek);
         });
     })
 };
