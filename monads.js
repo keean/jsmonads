@@ -518,8 +518,8 @@ Ecps.prototype.product = function(f) {
 Ecps.prototype.bind = function(f) {
     var that = this;
     return new Ecps(function(sk, ek) {
-        return that.run(function(a) {
-            return f(a).run(sk, ek);
+        return that.run(function() {
+            return f.apply(that, arguments).run(sk, ek);
         }, ek);
     });
 };
@@ -552,8 +552,8 @@ Ecps.fail = function(a) {
 Ecps.prototype.trap = function(f) {
     var that = this;
     return new Ecps(function(sk, ek) {
-        return that.run(sk, function(e) {
-            return f(e).run(sk, ek);
+        return that.run(sk, function() {
+            return f.apply(that, arguments).run(sk, ek);
         });
     })
 };

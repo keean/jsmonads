@@ -8,26 +8,26 @@
 <script src="monads.js"></script>
 <script>
 
-    var succ = function(a) {
-        document.getElementById('display').textContent += "SUCC " + a + "\n";
+    var succ = function(i, a) {
+        document.getElementById('display').textContent += "[" + i + "] SUCC " + a + "\n";
     };
 
-    var fail = function(e) {
-        document.getElementById('display').textContent += "FAIL " + e + "\n";
+    var fail = function(i, e) {
+        document.getElementById('display').textContent += "[" + i + "] FAIL " + e + "\n";
     };
 
-    var fun = function(a) {
+    var fun = function(i, a) {
         return new Ecps(function(succ, fail) {
-            document.getElementById('display').textContent += "DONE " + a + "\n";
+            document.getElementById('display').textContent += "[" + i + "] DONE " + a + "\n";
             if (a < 10) {
-                setTimeout(function() {succ(a + 1);}, 0);
+                setTimeout(function() {succ(i, a + 1);}, 0);
             } else {
-                setTimeout(function() {fail(a);}, 0);
+                setTimeout(function() {fail(i, a);}, 0);
             }
         });
     };
 
-    var prog = fun(5)
+    var prog = fun(1, 5)
         .bind(fun)
         .bind(fun)
         .bind(fun)
@@ -37,10 +37,10 @@
 
     prog.run(succ, fail);
 
-    var prog2 = fun(1).bind(function(x) {
-        return fun(x).bind(function(y) {
-            return fun(x + y).bind(function(z) {
-                return fun(x + y + z);
+    var prog2 = fun(2, 1).bind(function(i, x) {
+        return fun(i, x).bind(function(i, y) {
+            return fun(i, x + y).bind(function(i, z) {
+                return fun(i, x + y + z);
             })
         })
     });
