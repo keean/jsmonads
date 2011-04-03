@@ -19,14 +19,15 @@
         });
     };
 
-    fun(5)
-    .bind(fun)
-    .bind(fun)
-    .bind(fun)
-    .bind(fun)
-    .bind(fun)
-    .bind(fun)
-    .run(function(a) {
+    var prog = fun(5)
+        .bind(fun)
+        .bind(fun)
+        .bind(fun)
+        .bind(fun)
+        .bind(fun)
+        .bind(fun);
+
+    prog.run(function(a) {
         document.getElementById('display').textContent += "SUCC " + a + "\n";
     }, function(e) {
         document.getElementById('display').textContent += "FAIL " + e + "\n";
