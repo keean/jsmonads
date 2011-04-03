@@ -320,21 +320,32 @@
     test_laws("Cont", Cont);
     test_laws("Ecps", Ecps);
 
-    var m = Cont;
-    var fun = function(n) {
-        m.callcc(function(exit1) {
-            if (n < 10) {
-                return exit1("<10");
+    var fun = function(a) {
+        return new Ecps(function(sk, ek) {
+            document.getElementById('display').textContent += "DONE " + a + "\n";
+            if (a < 10) {
+                setTimeout(function() {sk(a);}, 0);
+            } else {
+                setTimeout(function() {ek(a);}, 0);
             }
-            return m.unit(">9");
-        }).bind(function(str) {
-            document.getElementById('display').textContent += "RESULT: " + str + "\n";
-            return m.unit();
-        }).run(id);
-    }
+        });
+    };
 
-    fun(5);
-    fun(15);
+    fun(5).bind(function() {return fun(15);}).run(function(a) {
+        document.getElementById('display').textContent += "SUCC " + a + "\n";
+    }, function(e) {
+        document.getElementById('display').textContent += "FAIL " + e + "\n";
+    });
+
+    var add = function(a) {return function(b) {return a + b;};};
+    var mul = function(a) {return function(b) {return a * b;};};
+
+    var L1 = new List([add, mul]);
+    var L2 = new List([1, 2]);
+    var L3 = new List([3, 4]);
+    document.getElementById('display').textContent += "LIST: " + L1.product(L2).product(L3).unbox() + "\n"
+
+    document.getElementById('display').textContent += "ECPS: " + Ecps.unit(1).fmap(add).product(Ecps.unit(2)).unbox() + "\n"
 
 </script>
 </script>
