@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Monads in JavaScript</title>
+    <title>Monadic Sequencing in JavaScript</title>
 </head>
 <body>
 <div id="display" style="white-space:pre-wrap"></div>
-<script src="monads.js"></script>
+<script src="seq.js"></script>
 <script>
 
     var succ = function(i, a) {
@@ -17,25 +17,17 @@
     };
 
     var fun = function(i, a) {
-        return new Ecps(function(succ, fail) {
+        return new Seq(function(succ, fail) {
             document.getElementById('display').textContent += "[" + i + "] DONE " + a + "\n";
             if (a < 10) {
-                setTimeout(function() {succ(i, a + 1);}, 0);
+                setTimeout(function() {succ(i, a + 1);}, 500);
             } else {
-                setTimeout(function() {fail(i, a);}, 0);
+                setTimeout(function() {fail(i, a);}, 500);
             }
         });
     };
 
-    var prog = seq(
-        fun,
-        fun,
-        fun,
-        fun,
-        fun,
-        fun,
-        fun
-    );
+    var prog = seq(fun, fun, fun, fun, fun, fun, fun);
 
     prog(1, 5).run(succ, fail);
 
