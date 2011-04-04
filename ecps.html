@@ -27,15 +27,17 @@
         });
     };
 
-    var prog = fun(1, 5)
-        .bind(fun)
-        .bind(fun)
-        .bind(fun)
-        .bind(fun)
-        .bind(fun)
-        .bind(fun);
+    var prog = seq(
+        fun,
+        fun,
+        fun,
+        fun,
+        fun,
+        fun,
+        fun
+    );
 
-    prog.run(succ, fail);
+    prog(1, 5).run(succ, fail);
 
     var prog2 = fun(2, 1).bind(function(i, x) {
         return fun(i, x).bind(function(i, y) {
@@ -46,6 +48,14 @@
     });
 
     prog2.run(succ, fail);
+
+    var prog3 = seq(fun, fun, function(i, x) {
+        return seq(fun, fun, function(i, y) {
+            return seq(fun, fun)(i, x + y);
+        })(i, x);
+    });
+
+    prog3(3, 1).run(succ, fail);
 
 </script>
 </script>

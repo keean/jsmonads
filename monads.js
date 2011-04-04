@@ -30,6 +30,18 @@ var rev = function(a) {return function(b) {return b(a);};};
 
 var dot = function(a) {return function(b) {return function(c) {return a(b(c));}}};
 
+var seq = function() {
+    var a = arguments;
+    return function() {
+        var l = a.length;
+        var m = a[0].apply(m, arguments);
+        for (var i = 1; i < l; i++) {
+            m = m.bind(a[i]);
+        }
+        return m;
+    };
+};
+
 //  class Monoid where
 //      zero :: a
 //      plus :: a -> a -> a
