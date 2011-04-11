@@ -17,10 +17,6 @@ var Seq = function(x) {
     this.run = function(sk ,ek) {return x(sk, ek);};
 }
 
-Seq.prototype.unbox = function() {
-    return this.run(id, id);   
-}
-
 // Functor
 Seq.prototype.fmap = function(f) {
     var m = this;

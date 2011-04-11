@@ -167,12 +167,12 @@ var monad_delimited = {
 // Identity Monad
 
 var Identity = function(x) {
-    this.unbox = function() {return x;};
+    this.unwrap = function() {return x;};
 };
 
 // Functor
 Identity.prototype.fmap = function(a) { 
-    return new Identity(a(this.unbox()));
+    return new Identity(a(this.unwrap()));
 };
 
 // Functor => Pointed
@@ -182,17 +182,17 @@ Identity.unit = function(a) {
 
 // Functor => Copointed
 Identity.prototype.extract = function() {
-    return this.unbox();
+    return this.unwrap();
 };
 
 // Pointed => Applicative
 Identity.prototype.product = function(a) {
-    return new Identity(this.unbox()(a.unbox()));
+    return new Identity(this.unwrap()(a.unwrap()));
 };
 
 // Applicative => Monad
 Identity.prototype.bind = function(a) {
-    return a(this.unbox());
+    return a(this.unwrap());
 };
 
 // Copointed => Comonad
@@ -204,12 +204,12 @@ Identity.prototype.extend = function(a) {
 // Maybe Monad
 
 var Maybe = function(x) {
-    this.unbox = function() {return x;};
+    this.unwrap = function() {return x;};
 };
 
 // Functor
 Maybe.prototype.fmap = function(a) {
-    var x = this.unbox();
+    var x = this.unwrap();
     return (x === undefined) ? this : new Maybe(a(x));
 };
 
@@ -220,17 +220,17 @@ Maybe.unit = function(a) {
 
 // Functor => Copointed *REMOVE*
 Maybe.prototype.extract = function() {
-    return this.unbox();
+    return this.unwrap();
 };
 
 // Pointed => Applicative
 Maybe.prototype.product = function(a) {
-    return (this.unbox() === undefined) ? this : ((a.unbox() === undefined) ? a : new Maybe(this.unbox()(a.unbox())))
+    return (this.unwrap() === undefined) ? this : ((a.unwrap() === undefined) ? a : new Maybe(this.unwrap()(a.unwrap())))
 };
 
 // Applicative => Monad
 Maybe.prototype.bind = function(a) {
-    var x = this.unbox();
+    var x = this.unwrap();
     return (x === undefined) ? this : a(x);
 };
 
@@ -241,7 +241,7 @@ Maybe.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 Maybe.prototype.plus = function(a) {
-    return (this.unbox() === undefined) ? a : this;
+    return (this.unwrap() === undefined) ? a : this;
 };
 
 //------------------------------------------------------------------------
@@ -252,7 +252,7 @@ var Either = function(left, x) {
     this.is_left = function() {return left;}; 
 };
 
-Either.prototype.unbox = function() {
+Either.prototype.unwrap = function() {
     return {value: this.value(), is_left: this.is_left()};
 };
 
@@ -300,12 +300,12 @@ Either.prototype.trap = function(a) {
 // List Monad
 
 var List = function(x) {
-    this.unbox = function() {return x;};
+    this.unwrap = function() {return x;};
 }
 
 // Functor
 List.prototype.fmap = function(a) {
-    var x = this.unbox();
+    var x = this.unwrap();
     var y = [];
     for (var i = 0; i < x.length; i++) {
         y.push(a(x[i]));
@@ -320,8 +320,8 @@ List.unit = function(a) {
 
 // Pointed => Applicative
 List.prototype.product = function(a) {
-    var x = this.unbox();
-    var y = a.unbox();
+    var x = this.unwrap();
+    var y = a.unwrap();
     var z = [];
     for (var j = 0; j < x.length; j++) {
         for (var i = 0; i < y.length; i++) {
@@ -333,7 +333,7 @@ List.prototype.product = function(a) {
 
 // Applicative => Monad
 List.prototype.join = function() {
-    var x = this.unbox();
+    var x = this.unwrap();
     var y = [];
     for (var i = 0; i < x.length; i++) {
         var xi = x[i];
@@ -358,19 +358,19 @@ List.zero = function() {
 
 // Monoid, Applicative => Alternative, Monad => MonadPlus
 List.prototype.plus = function(a) {
-    return new List(this.unbox().concat(a.unbox()));
+    return new List(this.unwrap().concat(a.unwrap()));
 };
     
 //------------------------------------------------------------------------
 // Stream Comonad 
 
 var Stream = function(x) {
-    this.unbox = function() {return x;};
+    this.unwrap = function() {return x;};
 }
 
 // Functor
 Stream.prototype.fmap = function(a) {
-    var x = this.unbox();
+    var x = this.unwrap();
     var y = [];
     for (var i = 0; i < x.length; i++) {
         y.push(a(x[i]));
@@ -385,13 +385,13 @@ Stream.unit = function(a) {
 
 // Functor => Copointed
 Stream.prototype.extract = function() {
-    return this.unbox()[0];
+    return this.unwrap()[0];
 };
 
 // Pointed => Applicative
 Stream.prototype.product = function(a) {
-    var x = this.unbox();
-    var y = a.unbox();
+    var x = this.unwrap();
+    var y = a.unwrap();
     var z = [];
     for (var j = 0; j < x.length; j++) {
         for (var i = 0; i < y.length; i++) {
@@ -403,7 +403,7 @@ Stream.prototype.product = function(a) {
 
 // Applicative => Monad
 Stream.prototype.join = function() {
-    var x = this.unbox();
+    var x = this.unwrap();
     var y = [];
     for (var i = 0; i < x.length; i++) {
         var xi = x[i];
@@ -423,7 +423,7 @@ Stream.prototype.bind = function(a) {
 
 // Copointed => Comonad
 Stream.prototype.extend = function(a) {
-    var x = this.unbox();
+    var x = this.unwrap();
     var y = [];
     for(var i = 0; i < x.length; i++) {
         y.push(a(new Stream(x.slice(i))));
@@ -438,7 +438,7 @@ var Cont = function(x) {
     this.run = function(a) {return x(a);};
 }
 
-Cont.prototype.unbox = function() {
+Cont.prototype.unwrap = function() {
     return this.run(id);   
 }
 
@@ -514,7 +514,7 @@ var Ecps = function(x) {
     this.run = function(sk ,ek) {return x(sk, ek);};
 }
 
-Ecps.prototype.unbox = function() {
+Ecps.prototype.unwrap = function() {
     return this.run(id, id);   
 }
 

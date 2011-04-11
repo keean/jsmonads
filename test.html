@@ -42,7 +42,7 @@
     };
 
     var testM = function(t, a, b) {
-        if (equal(a.unbox(), b.unbox())) {
+        if (equal(a.unwrap(), b.unwrap())) {
             t += " test passed.\n";
         } else {
             t += " test failed.\n";
@@ -202,100 +202,7 @@
                 }).fmap(function(x) {return "A" + x;}).run(id),
                 "A1+2"
             );
-
-            document.getElementById('display').textContent += "M" + m.reset(
-                m.unit("1").bind(function(y) {
-                    return m.shift(function(k) {
-                        setTimeout(function() {k(y + "A");}, 1);
-                        setTimeout(function() {k(y + "B");}, 2);
-                        return m.unit(y + "Y");
-                    }).bind(function(x) {
-                        return m.unit(x + "C");
-                    }).bind(function(x) {
-                        document.getElementById('display').textContent += x + "Q\n";
-                        return m.unit(x + "P");
-                    });
-                }).bind(function(x) {
-                    return m.unit(x + "3");
-                }).bind(function(x) {
-                    document.getElementById('display').textContent += x + "Z\n";
-                    return m.unit(x + "4");
-                })
-            ).run(id) + "\n";
-
-            m.unit("2").bind(function(y) {
-                return m.reset(
-                    m.shift(function(k) {
-                        //document.getElementById('display').textContent += "NNN " + k("X").unbox() + "\n";
-                        setTimeout(function() {k(y + "A").unbox();}, 2000);
-                        setTimeout(function() {k(y + "B").unbox();}, 4000);
-                        return m.unit(y + "Y");
-                    }).bind(function(x) {
-                        return m.unit(x + "C");
-                    }).bind(function(x) {
-                        document.getElementById('display').textContent += x + "Q\n";
-                        return m.unit(x + "P");
-                    })
-                );
-            }).bind(function(x) {
-                return m.unit(x + "3");
-            }).run(function(x) {
-                document.getElementById('display').textContent += x + "Z\n";
-            });
-
-            document.getElementById('display').textContent += "K" + m.unit("3").bind(function(y) {
-                return m.callcc(function(ok) {
-                    return m.callcc(function(ex) {
-                        setTimeout(function() {ex(y + "FAIL").unbox();}, 5000);
-                        setTimeout(function() {ok(y + "SUCC").unbox();}, 10000);
-                        //return ex("ZZZ");
-                        return m.unit(y + "XXX");
-                    }).bind(function(ex) {
-                        document.getElementById('display').textContent += ex + " HANDLER\n";
-                        return m.unit(y + "YYY");
-                    })
-                })
-            }).bind(function(ok) {
-                document.getElementById('display').textContent += ok + " CONTINUE\n";
-                return m.unit("ZZZ");
-            }).run(id);
-
-            /*
-            m.unit("2").bind(function(x) {
-                return m.callcc(function(k) {setTimeout(function() {k("4")}, 1000); return m.unit("3");}).bind(function(y) {
-                    return m.unit(x + "+" + y);
-                });
-            }).fmap(function(x) {return "A" + x;}).bind(function(x) {
-                if (x === "A2+3") {
-                    document.getElementById('display').textContent += "Continuation CallCC immediate test passed\n";
-                } else if (x === "A2+4") {
-                    document.getElementById('display').textContent += "Continuation CallCC callback test passed\n";
-                } else {
-                    document.getElementById('display').textContent += "Continuation CallCC imediate/callback failed\n";
-                }
-                return m.unit();
-            }).run(id);
-
-            m.unit("3").bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("5" + x)}, 500); return m.unit("7" + x);});})
-            .bind(function(x) {return m.callcc(function(k) {setTimeout(function() {k("6" + x)}, 1000); return m.unit("8" + x);});})
-            .fmap(function(x) {return "A" + x;})
-            .bind(function(x) {
-                if (x === "A873") {
-                    document.getElementById('display').textContent += "Continuation CallCC imm, imm test passed\n";
-                } else if (x === "A853") {
-                    document.getElementById('display').textContent += "Continuation CallCC cb, imm test passed\n";
-                } else if (x === "A673") {
-                    document.getElementById('display').textContent += "Continuation CallCC imm, cb test passed\n";
-                } else if (x === "A653") {
-                    document.getElementById('display').textContent += "Continuation CallCC cb, cb test passed\n";
-                } else {
-                    document.getElementById('display').textContent += "Continuation CallCC imm/cb, imm/cb test failed\n";
-                }
-                return m.unit();
-            }).run(id);
-            */
         }
-
     };
 
     // test monad laws
@@ -306,38 +213,6 @@
     test_laws("Stream", Stream);
     test_laws("Cont", Cont);
     test_laws("Ecps", Ecps);
-
-    var fun = function(a) {
-        return new Ecps(function(succ, fail) {
-            document.getElementById('display').textContent += "DONE " + a + "\n";
-            if (a < 10) {
-                setTimeout(function() {succ(a + 10);}, 0);
-            } else {
-                setTimeout(function() {fail(a);}, 0);
-            }
-        });
-    };
-
-    fun(5).bind(fun).run(function(a) {
-        document.getElementById('display').textContent += "SUCC " + a + "\n";
-    }, function(e) {
-        document.getElementById('display').textContent += "FAIL " + e + "\n";
-    });
-
-    //var add = curry(function(a, b) {return a + b;});
-    var add = function(a) {return function(b) {return a + b;};};
-    var mul = function(a) {return function(b) {return a * b;};};
-    var bad = function(a, b) {return function(c, d) {return function(e, f) {return [a + c + e, b + d + f];};};};
-
-    var L1 = new List([add, mul]);
-    var L2 = new List([1, 2]);
-    var L3 = new List([3, 4]);
-    document.getElementById('display').textContent += "LIST: " + L1.product(L2).product(L3).unbox() + "\n"
-    document.getElementById('display').textContent += "ECPS: " + Ecps.unit(1).fmap(add).product(Ecps.unit(2)).unbox() + "\n"
-    document.getElementById('display').textContent += "ECP2: " + Ecps.unit(1, 2).fmap(bad)
-        .product(Ecps.unit(2, 3))
-        .product(Ecps.unit(4, 5))
-        .unbox() + "\n"
 
 </script>
 </script>
